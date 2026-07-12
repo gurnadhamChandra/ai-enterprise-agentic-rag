@@ -35,3 +35,149 @@ def save_processor_data(data:dict,source_type:str, filename:str) -> str:
         json.dump(data,f,ensure_ascii=False,indent=2)
      logfire.info("Chunk metadata saved locally",dest=dest,chunks=len(data.get("chunks",[])))
      return dest 
+
+def process_file(file_path:str,filename:str,source_type:str):
+    """Parse → chunk → save locally → embed → index in Qdrant."""
+    with logfire.span("Processing File", file=filename, source=source_type):
+        try:
+            """Extract text based localy"""
+            ext=filename.lower().rsplit(".",1)[-1].lower()
+            if ext =="pdf":
+                full_text=parse_pdf(file_path)
+            elif ext in ("html","htm"):
+                full_text=parse_html(file_path)
+            elif ext =="tex":
+                full_text=parse_text(file_path)
+            elif ext in ("docx","pptx"):
+                from app.ingestion.loaders.office import parse_office_files
+                full_text=parse_office_files(file_path)
+            else:
+                logfire.warning(f"Skipping unsupported file type: {filename}")
+                return ""
+
+            if not full_text or not full_text.strip():
+                logfire.warning(f"No text extracted from {filename} — skipping.")
+                return ""
+
+           
+            #Chunk text
+            chunks = chunk_text(full_text)
+            if not chunks:
+                return ""
+
+            #save processed metadata locally
+            processed_metadata={
+                "filename":filename,
+                "source_type":source_type,
+                "chunks":chunks,
+            }
+            local_path=save_processor_data(processed_metadata,source_type,filename)
+            logfire.info("File processed successfully",file_path=local_path)
+
+            #Embed and index in Qdrant db
+
+            #vectorizing and indexing   
+
+            with logfire.span("Vectorizing and Indexing"):
+                embeddings =embed_text(chunks)
+                points = [
+                    models.PointStruct(
+                        id=str(uuid.uuid4()),
+                        vector=vector,
+                        payload={
+                            "text": chunk,
+                            "source": filename,
+                            "source_type": source_type,
+                        },
+                    )
+                    for chunk, vector in zip(chunks, embeddings)
+                ] 
+
+                qdrantClient.upsert(
+                    collection_name=settings.QDRANT_COLLECTION,
+                    points=points,
+                )
+                logfire.info(f"Indexed {len(points)} points to Qdrant from {filename}.")
+
+        except Exception as e:
+            logfire.error(f"Failed to process {filename}: {e}")       
+
+
+def process_directory(dir_path:str,source_type:str):
+    """Process every file in a directory."""
+    with logfire.span("Scanning Directory", path=dir_path, source=source_type):
+        files = [f for f in os.listdir(dir_path) if os.path.isfile(os.path.join(dir_path, f))]
+        logfire.info(f"Found {len(files)} files in {dir_path}.")
+        for filename in files:
+            process_file(os.path.join(dir_path, filename), filename, source_type)
+
+
+def run_universal_ingestion(base_dir: str, explicit_source_type: str | None = None, wipe: bool = False):
+     """
+    Scan base_dir, map sub-folders to source types, and ingest all documents.
+    Pass --wipe to drop and recreate the Qdrant collection before ingestion.
+    """
+     with logfire.span("Universal Ingestion Started", base_directory=base_dir):
+        # Wipe collection if requested
+         if wipe:
+            with logfire.span("Wiping Collection"):
+                if qdrantClient.collection_exists(settings.QDRANT_COLLECTION):
+                    qdrantClient.delete_collection(settings.QDRANT_COLLECTION)
+                    logfire.info(f"Collection '{settings.QDRANT_COLLECTION}' deleted.")
+
+    # Recreate collection — dimension resolved at runtime after embedding model probe
+         if not qdrantClient.collection_exists(settings.QDRANT_COLLECTION):
+            dim = get_embedding_dim()
+            qdrantClient.create_collection(
+                collection_name=settings.QDRANT_COLLECTION,
+                vectors_config=models.VectorParams(size=dim, distance=models.Distance.COSINE)
+            )
+            logfire.info(
+                f"Created collection '{settings.QDRANT_COLLECTION}' "
+                f"({dim}-dim, Cosine)."
+            )
+         # Route to sub-folders or treat the whole dir as one source
+         subdirs = [
+            d for d in os.listdir(base_dir)
+            if os.path.isdir(os.path.join(base_dir, d))
+        ]
+
+         if not subdirs:
+            if explicit_source_type:
+                source_type = explicit_source_type
+            else:
+                base_name = os.path.basename(os.path.normpath(base_dir)).lower()
+                source_type = (
+                    "true" if "true" in base_name
+                    else "noisy" if "noisy" in base_name
+                    else "general"
+                )
+            logfire.info(f"No sub-folders found — processing '{base_dir}' as '{source_type}'.")
+            process_directory(base_dir, source_type)
+         else:
+            for subdir in subdirs:
+                source_type = (
+                    "true" if "true" in subdir.lower()
+                    else "noisy" if "noisy" in subdir.lower()
+                    else subdir
+                )
+                process_directory(os.path.join(base_dir, subdir), source_type)
+
+if __name__ == "__main__":
+    # Usage:
+    #   python -m app.ingestion.processor DATA --wipe
+    #   python -m app.ingestion.processor DATA/true_data true
+    wipe_requested = "--wipe" in sys.argv
+    clean_args = [a for a in sys.argv if a != "--wipe"]
+
+    target_dir = clean_args[1] if len(clean_args) > 1 else "DATA"
+    explicit_type = clean_args[2] if len(clean_args) > 2 else None
+
+    if not os.path.exists(target_dir):
+        print(f"Error: path '{target_dir}' does not exist.")
+        sys.exit(1)
+
+    run_universal_ingestion(target_dir, explicit_source_type=explicit_type, wipe=wipe_requested)
+    logfire.info("Ingestion job completed.")
+
+            

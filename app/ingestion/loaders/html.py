@@ -28,7 +28,7 @@ def parse_html(file_path:str):
 
         except Exception as e:
             logfire.error(f"❌ HTML Parse Failed", error=str(e))
-            return e
+            raise
             
             
             

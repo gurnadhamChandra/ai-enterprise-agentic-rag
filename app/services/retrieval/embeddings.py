@@ -90,7 +90,7 @@ def _embed_batch(batch: list[str]) -> list[list[float]]:
 
 #public Api---------------
 
-def embed_quey(query:str) -> list[float]:
+def embed_query(query:str) -> list[float]:
     _init()
     if _active_model is None:
         raise RuntimeError("Embedding model is not initialised — _init() did not load any model.")
