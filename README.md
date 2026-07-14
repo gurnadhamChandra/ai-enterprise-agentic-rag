@@ -10,3 +10,11 @@ python -m app.ingestion.processor DATA/true_data true
 
 run this command to ingest noisy data:
 python -m app.ingestion.processor DATA/noisy_data  noisy
+
+
+run backend====
+uvicorn app.main:app --reload --port 8000
+
+
+run frontend===
+streamlit run app/ui/app.py
