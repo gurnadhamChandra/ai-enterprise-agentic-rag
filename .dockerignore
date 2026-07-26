@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Environment & secrets
+.env
+.logfire/
+
+# Data (not needed at runtime — ingestion only)
+DATA/
+processed_data/
+
+# Dev files
+.git/
+.gitignore
+.vscode/
+.idea/
+*.md
+*.excalidraw
+flow.excalidraw
+uv.lock
+pyproject.toml
+
+# Evals (not needed in production backend)
+evals/
+
+# Frontend (deployed separately on Streamlit Cloud)
+app/ui/
+.streamlit/
+requirements-streamlit.txt

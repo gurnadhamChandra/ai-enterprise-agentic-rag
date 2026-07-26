@@ -1,0 +1,11 @@
+# ==============================================================================
+# STREAMLIT UI REQUIREMENTS — For Streamlit Community Cloud deployment
+# ==============================================================================
+# Lightweight deps for just the chat frontend.
+# The heavy backend runs on HuggingFace Spaces separately.
+# ==============================================================================
+
+streamlit                   # Frontend dashboard for the chat interface
+requests                    # HTTP calls to the FastAPI backend
+python-dotenv               # For loading configuration
+logfire                     # Observability (UI-side tracing)

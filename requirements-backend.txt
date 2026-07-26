@@ -1,0 +1,47 @@
+# ==============================================================================
+# BACKEND REQUIREMENTS — For HuggingFace Spaces Docker deployment
+# ==============================================================================
+# This is a subset of requirements.txt containing only what the FastAPI
+# backend needs. The Streamlit UI has its own requirements-streamlit.txt.
+# ==============================================================================
+
+# --- CORE API & WEB FRAMEWORK ---
+fastapi                     # High-performance web framework for the API
+uvicorn[standard]           # ASGI server to run the FastAPI app
+python-dotenv               # For loading configuration from .env files
+requests                    # HTTP library for internal/external API calls
+numpy                       # Numerical processing
+pytz                        # Timezone handling for logs
+nest-asyncio                # Support for nested async loops
+
+# --- GEMINI EMBEDDINGS ---
+google-generativeai         # Gemini API — embeddings
+langchain-google-genai      # LangChain integration for Gemini models
+
+# --- VECTOR DB & RETRIEVAL ---
+qdrant-client               # Vector Database for semantic search
+flashrank                   # Ultra-fast local cross-encoder for semantic reranking
+
+# --- LANGCHAIN & AGENTIC ORCHESTRATION ---
+langchain                   # Core LLM orchestration
+langgraph                   # State-machine logic for cyclic agent flows
+langchain-groq              # Integration for Llama 3.3 models
+langchain-google-vertexai   # Required shim for NeMo Guardrails internal import
+langchain-community         # Community-contributed tools and loaders
+langchain-openai            # OpenAI-compatible layer (used by Portkey gateway)
+pydantic>=2.0.0             # Data validation and settings management
+
+# --- OBSERVABILITY & DISTRIBUTED TRACING ---
+langsmith                   # Specialized tracing for LangChain/LangGraph
+logfire[fastapi,requests]   # Pydantic Logfire — FastAPI + requests instrumentation
+loguru                      # Enhanced logging for Python
+
+# --- GUARDRAILS ---
+nemoguardrails              # NVIDIA NeMo Guardrails for input/output safety rails
+langchain-nvidia-ai-endpoints # LangChain integration with NVIDIA AI Endpoints
+
+# --- LLM GATEWAY ---
+portkey-ai                  # Portkey Gateway for unified LLM routing
+
+# --- EMBEDDINGS (SENTENCE TRANSFORMERS) ---
+sentence-transformers       # Used by FlashRank reranker internally
