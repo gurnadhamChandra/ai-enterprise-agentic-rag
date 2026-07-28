@@ -97,34 +97,32 @@ pip install -r requirements.txt
 Create a `.env` file with the following keys:
 
 ```env
-# Groq Reasoning Engine (Llama 3.3)
-GROQ_API_KEY = ""
-GROQ_FALLBACK_API_KEY = ""          # second Groq key, or same as primary
+GROQ_API_KEY="groq api key as primary"
+GROQ_FALLBACK_API_KEY="groq api key as fallback use diffent account and create api key use that here"
 
-# Portkey LLM Gateway
-PORTKEY_API_KEY = ""
+QDRANT_API_KEY="Qdrant api key->create api key in qdrant"
+QDRANT_CLUSTER_END_POINT="create one cluster in qdrant use that endpoint here"
 
-# Qdrant Vector DB
-QDRANT_API_KEY = ""
-QDRANT_CLUSTER_ENDPOINT = ""        # e.g. https://your-cluster.cloud.qdrant.io:6333
+GEMINI_API_KEY="gemini api key google aistudio.com ->create api key"
+
+# === Observability
 
 # Pydantic Logfire Observability
-LOGFIRE_TOKEN = ""
+LOGFIRE_TOKEN ="logfire token->use for observability"
+# Portkey LLM Gateway
+PORTKEY_API_KEY = "portkey api key"
+PORTKEY_CONFIG_SLUG ="portkey dshboard ->config->create config file and name the file save -> save that name and paste here"
 
-# LangSmith
-LANGSMITH_TRACING = true
-LANGSMITH_ENDPOINT = https://api.smith.langchain.com
-LANGSMITH_API_KEY = ""
-LANGSMITH_PROJECT = ""
+# LANGSMITH 
 
-# Streamlit UI → FastAPI
-BACKEND_URL = ""                    # e.g. http://localhost:8000
+LANGSMITH_TRACING=true
+LANGSMITH_ENDPOINT=https://api.smith.langchain.com
+LANGSMITH_API_KEY="langsmith api key"
+LANGSMITH_PROJECT="langsmith project name (langsmith->tracing->createproject name)"
 
-# Eval judge LLM (keep separate from main key to avoid rate-limiting the live app)
-JUDGE_GROQ = ""
+JUDGE_GROQ="judge groq key"
 
-# Gemini Embeddings
-GEMINI_API_KEY = ""
+
 ```
 
 ### 3. Run data ingestion
